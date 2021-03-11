@@ -12,7 +12,7 @@ namespace PassElements
         #region Private Member
         readonly int MINPSEUDOLENGTH = 16;
         readonly int MAXPSEUDOLENGTH = 32;
-        static Random rnd;
+        static Random rnd = new Random();
         string pParameter;
         #endregion
 
@@ -37,7 +37,6 @@ namespace PassElements
         #region Constructor
         public PseudoPassElement() : base("")
         {
-            rnd = new Random();
             pParameter = generateRandomParm();
         }
         #endregion

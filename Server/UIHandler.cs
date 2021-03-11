@@ -28,6 +28,7 @@ namespace Server
         TrackBar imgSizer;
         GroupBox grpQueryDataContainer;
         PrivateFontCollection privateFontCollection;
+        ToolTip tt;
         FontFamily captchaFont;
 
         #endregion
@@ -45,6 +46,16 @@ namespace Server
             sW = new Stopwatch();
             sW.Start();
             uiForm = PassUIForm;
+            //Tooltip
+            tt = new ToolTip();
+            tt.AutoPopDelay = 15000;
+            //tt.InitialDelay = 500;
+            tt.OwnerDraw = true;
+            tt.IsBalloon = false;
+            tt.BackColor = Color.Black;
+            tt.Draw += DrawTTEventHandler;
+            tt.Popup += PopupTTEventHandler;
+
             grpQueryDataContainer = (GroupBox)(PassUIForm.Controls.Find("grpQueryData", true))[0];
             varPassPanel = (FlowLayoutPanel)(PassUIForm.Controls.Find("varPasswordPanel", true))[0];
             varDataPanel = (FlowLayoutPanel)(PassUIForm.Controls.Find("flowGeneratePanel", true))[0];
@@ -58,13 +69,22 @@ namespace Server
             
         }
 
+       
         #endregion
 
         #region Public Methods
-        public void setCustomCaptchaFont()
+        public bool setCustomCaptchaFont(string fontPath)
         {
-            privateFontCollection.AddFontFile(@".\Resources\LetterFont.ttf");
-            captchaFont = privateFontCollection.Families[0];
+            try
+            {
+                privateFontCollection.AddFontFile(fontPath);
+                captchaFont = privateFontCollection.Families[0];
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
         }
 
         public void writeLog(string strMessage)
@@ -91,8 +111,7 @@ namespace Server
                 tmp1PictBox.Tag = pElement.Value;
                 tmp1PictBox.Name = pElement.Value.PassParameter;
                 tmp1PictBox.DoubleClick += TmpPictBox_DoubleClick;
-                tmp1PictBox.MouseHover += TmpPictBox_MouseHover;
-                tmp1PictBox.MouseLeave += TmpPictBox_MouseLeave;
+                tt.SetToolTip(tmp1PictBox, ((DynPassElement)pElement.Value).PassData);
                 Binding sizeBinding = new Binding("Size", imgSizer, "Value");
                 sizeBinding.Format += SizeConvertEventHandler;
                 tmp1PictBox.DataBindings.Add(sizeBinding);
@@ -100,6 +119,34 @@ namespace Server
             }
             msgLogger("UiHandler: FlowPanel mit variablen Inhalten gefüllt");
 
+        }
+
+        private void PopupTTEventHandler(object sender, PopupEventArgs e)
+        {
+            using (Font f = new Font(captchaFont, 200))
+            {
+                e.ToolTipSize = TextRenderer.MeasureText(tt.GetToolTip(e.AssociatedControl), f);
+            }
+        }
+
+        private void DrawTTEventHandler(object sender, DrawToolTipEventArgs e)
+        {
+            Color[] colRnd = new Color[] { Color.Lime, Color.Blue };
+            SolidBrush textCol;
+            e.DrawBackground();
+            //e.Graphics.FillRectangle(new SolidBrush(Color.Transparent), e.Bounds);
+            int xPos = rnd.Next(2, 70);
+            int yPos = rnd.Next(2, 70);
+            int rWidth = rnd.Next(30, 130 - xPos);
+            int rHeight = rnd.Next(30, 130 - yPos);
+            e.Graphics.DrawImage(((PictureBox)e.AssociatedControl).Image, e.Bounds, new Rectangle(xPos, yPos, rWidth, rHeight), GraphicsUnit.Pixel);
+            int counter = 0;
+            for (int i = 0; i < e.ToolTipText.Length; i++)
+            {
+                textCol = new SolidBrush(colRnd[rnd.Next(0, 2)]);
+                e.Graphics.DrawString(e.ToolTipText[i].ToString(), new Font(captchaFont, 200), textCol, new PointF(counter, rnd.Next(-100, 50)));
+                counter += (180 + rnd.Next(0, 120));
+            }
         }
 
         public void initDisplay()
@@ -214,36 +261,6 @@ namespace Server
         #endregion
 
         #region EventHandler
-
-        private void TmpPictBox_MouseLeave(object sender, EventArgs e)
-        {
-            if (varDataPanel.Parent != (uiForm.Controls.Find("grpGenerateData", true))[0])
-            {
-
-            }
-        }
-
-        private void TmpPictBox_MouseHover(object sender, EventArgs e)
-        {
-            if (varDataPanel.Parent != (uiForm.Controls.Find("grpGenerateData", true))[0])
-            {
-                varDataPanel.Visible = false;
-                string code = ((DynPassElement)((PictureBox)sender).Tag).PassData;
-                Graphics g = grpQueryDataContainer.CreateGraphics();
-                Color[] colRnd = new Color[] { Color.Lime, Color.Blue };
-                int rndIx = rnd.Next(0, 2);
-                SolidBrush textCol = new SolidBrush(colRnd[rndIx]);
-                int counter = 0;
-                for (int i = 0; i < code.Length; i++)
-                {
-                    g.DrawString(code[i].ToString(), new Font(captchaFont, 70 + rnd.Next(5, 8)), textCol, new PointF(counter, rnd.Next(1, 70)));
-                    counter += 30;
-                }
-                
-                g.Dispose();
-            }
-        }
-
         private void TmpPictBox_DoubleClick(object sender, EventArgs e)
         {
             msgLogger("UiHandler: Doppelklick auf " + ((PictureBox)sender).Name);

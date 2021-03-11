@@ -27,7 +27,10 @@ namespace vPass
             InitializeComponent();
             varPassFileAvailable = false;
             passLoginServer = new LoginServer(this);
-            passLoginServer.setCustomCaptchaFont();
+            if (!passLoginServer.setCustomCaptchaFont(@".\Resources\LetterFont.ttf"))
+            {
+                MessageBox.Show("Im Ordner '.\\Resources' keine Font-Datei 'LetterFont.ttf' gefunden. Es wird die Standardschrift Consolas verwendet");
+            }
             passLoginServer.reloadVarDataDisplay();
             tabMain.TabPages[0].Select();
                         

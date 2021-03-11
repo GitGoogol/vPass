@@ -25,7 +25,6 @@ namespace Server
         private VarPassword vPassword;
         private string appMode;
         SecureString secPassString = new SecureString();
-        static Random rnd;
         #endregion
 
         #region Public Members
@@ -52,7 +51,6 @@ namespace Server
         #region Constructor
         public LoginServer(Form PassUIForm)
         {
-            rnd = new Random();
             varDataAvailable = false;
             uiHandler = new UIHandler(PassUIForm);
             msgLogger = uiHandler.writeLog;
@@ -73,9 +71,9 @@ namespace Server
         #endregion
 
         #region Public Methods
-        public void setCustomCaptchaFont()
+        public bool setCustomCaptchaFont(string fontPath)
         {
-            uiHandler.setCustomCaptchaFont();
+            return uiHandler.setCustomCaptchaFont(fontPath);
         }
 
         public void initServer()
