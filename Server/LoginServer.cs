@@ -2,7 +2,6 @@
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using VariableData;
 using System.Windows.Forms;
 using System.Security.Cryptography;
 using System.Security;
@@ -10,122 +9,131 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Configuration;
 using System.Xml;
+using PassElements;
 
 namespace Server
 {
-    public delegate void MSGLogger(string message);
     public class LoginServer
     {
         #region Private Members
-        VarDataHandler pDH;
-        Dictionary<Type, VarDataHandler> serverData;
+        readonly string IMGPATH = @".\imgs\";
+        readonly int AESPASSLENGTH = 32;
+        readonly string AESFILLSTRING = "&JHI-l498.,a7*/-2+#+h heG88anz8GT/%E/&*kl4(/&T4//tgeH6Gg78dz+*1-*+asg5§hf74fH(g34gf7/%Fp%GF8";
+        VarDataHandler vDataHandler;
+        UIHandler uiHandler;
         MSGLogger msgLogger;
         private VarPassword vPassword;
+        private string appMode;
         SecureString secPassString = new SecureString();
+
         #endregion
 
         #region Public Members
-
-
+        public string passwordCode { get; private set; }
+        public string passwordResult { get; private set; }
+        public bool varDataAvailable { get; private set; }
         public VarPassword varPassword
         {
             get { return vPassword; }
             set { vPassword = value; }
         }
-
-        public bool varDataAvailable { get; private set; }
-
+        public string applicationMode
+        {
+            get { return appMode; }
+            set
+            {
+                appMode = value;
+                uiHandler.appMode = appMode;
+                msgLogger("Server: Application Mode gewechselt: " + appMode);
+            }
+        }
         #endregion
 
         #region Constructor
-        public LoginServer(MSGLogger messageLogger)
+        public LoginServer(Form PassUIForm)
         {
-            msgLogger = messageLogger;
-            vPassword = new VarPassword();
-            serverData = new Dictionary<Type, VarDataHandler>();
+
             varDataAvailable = false;
+            uiHandler = new UIHandler(PassUIForm);
+            msgLogger = uiHandler.writeLog;
+            msgLogger("Server: UIHandler Instanz erstellt");
+            vPassword = new VarPassword(msgLogger);
+            msgLogger("Server: VarPassword Instanz erstellt");
+            vDataHandler = new VarDataHandler(IMGPATH, msgLogger);
+            msgLogger("Server: VarDataHandler Instanz erstellt mit Pfad: " + IMGPATH);
+            //uiHandler = new UIHandler(PassUIForm);
+            //msgLogger = uiHandler.writeLog;
+            //msgLogger("Server: UIHandler Instanz erstellt");
+            uiHandler.elementAddRequest += addElementHandler;
+            msgLogger = uiHandler.writeLog;
+            msgLogger("Server: Konfigurationsdaten einlesen");
             readConfigData();
+            msgLogger("Server: Konfigurationsdaten eingelesen");
         }
         #endregion
 
         #region Public Methods
         public void initServer()
         {
-            //vorhandene Daten löschen
-            serverData.Clear();
-            msgLogger("evtl. vorhandene Zufallsdaten gelöscht");
-
-            //passLoginServer = new LoginServer(msgLogger);
-            createVarData(new VarRandomI());
-            msgLogger("neue Zufallszahlen erzeugt");
-            createVarData(new VarTime());
-            msgLogger("neue Zeit-/Datumsinformationen erzeugt");
-            createVarData(new VarColor());
-            msgLogger("neue Farbzuweisungen erstellt");
-            createVarData(new VarRandomA());
-            msgLogger("neue Zufallsbuchstaben erstellt");
+            msgLogger("Server: Init Server");
+            //vorhandene Daten löschen und neue erzeugen
+            uiHandler.initDisplay();
+            vDataHandler.generateNewVarData();
+            varDataAvailable = true;
         }
 
-        public void fillVarDataDisplay(GroupBox tlpGroupBox)
+        public void reloadVarDataDisplay()
         {
-            if (serverData != null && varDataAvailable)
+            initServer();
+            if (varDataAvailable)
             {
-                foreach (var item in tlpGroupBox.Controls)
-                {
-                    if (item.GetType() == typeof(TableLayoutPanel))
-                    {
-                        //((TableLayoutPanel)item).Controls.Clear();
-                        serverData[(Type)((TableLayoutPanel)item).Tag].fillLayoutPanel((TableLayoutPanel)item);
-                        msgLogger("Tabelle für " + ((Type)((TableLayoutPanel)item).Tag).ToString() + " in Groupbox " + tlpGroupBox.Name + " gefüllt");
-                    }
-                }
+                msgLogger("Server: Flow Panel mit variablen Daten füllen");
+                uiHandler.fillLayoutPanel(vDataHandler.varData);
             }
 
         }
 
-        public Dictionary<string, string> getServerData(Type creatorType)
+        public string getVarServerData(string parmString)
         {
-            if (serverData == null) throw new Exception("No valid server data available");
-            return ((VarDataHandler)serverData[creatorType]).varData;
+            msgLogger("Server: variable Daten abrufen");
+            return ((DynPassElement)vDataHandler.varData[parmString]).PassData;
         }
 
         public void getDecryptedPasswordData(TextBox txtBox)
         {
             if (vPassword.elementsCount < 1)
             {
-                msgLogger("Kein Passwortfile generiert. Zu wenig Elemente um etwas darzustellen");
+                msgLogger("Server: Kein Passwortfile generiert. Zu wenig Elemente um etwas darzustellen");
                 return;
             }
             txtBox.Clear();
-            msgLogger("Darstellung für entschlüsselte Passwortdatei gelöscht");
-            for (int i = 0; i < varPassword.elementsCount; i++)
-            {
-                txtBox.AppendText((varPassword.getElement(i))[0] + " (" + (varPassword.getElement(i))[1] + ")" + Environment.NewLine);
-            }
-            msgLogger("Darstellung für entschlüsselte Passwortdatei gefüllt");
+            msgLogger("Server: Darstellung für entschlüsselte Passwortdatei gelöscht");
+
+            txtBox.AppendText(passwordCode);
+            msgLogger("Server: Darstellung für entschlüsselte Passwortdatei gefüllt");
         }
 
         public bool generatePasswordFile()
         {
-            if (vPassword.elementsCount < 1)
+            if (passwordCode == null || passwordCode == "")
             {
-                msgLogger("Kein Passwortfile generiert. Zu wenig Elemente");
+                msgLogger("Server: Kein Passwortfile generiert. Zu wenig Elemente");
                 return false;
             }
-            IFormatter binFormatter = new BinaryFormatter();
-            MemoryStream memStream = new MemoryStream();
-
-            using (FileStream fileStream = new FileStream("rawPassword.txt", FileMode.Create))
+            if (!parsePassCode())
             {
-                msgLogger("Öffne Filestream zum Erzeugen eines NICHT verschlüsselten Passwortfiles");
-                binFormatter.Serialize(fileStream, varPassword);
-                msgLogger("Serialisierung und unverschlüsseltes Schreiben in File");
+                msgLogger("Server: Error at parsing password code for file generation");
+                return false;
             }
-            binFormatter.Serialize(memStream, varPassword);
-            msgLogger("Serialisierung Passwort Objekt in RAM");
+
+            MemoryStream memStream = new MemoryStream(Encoding.UTF8.GetBytes(passwordCode));
+            msgLogger("Server: Serialisierung Passwort Objekt in RAM");
+
+            File.WriteAllText("rawPassword.txt", passwordCode);
+            msgLogger("Server: Unverschlüsseltes Passwortfile schreiben");
 
             encryptStream(memStream, "encryptedPassword.bin", secPassString);
-            msgLogger("Passwortobjekt serialisiert und verschlüsselt and Filestream übergeben");
+            msgLogger("Server: Passwortobjekt serialisiert und verschlüsselt and Filestream übergeben");
             memStream.Close();
 
             MessageBox.Show("unverschlüsselte (rawPasswort.txt) und verschlüsselte (encryptedPassword.bin) Datei gespeichert");
@@ -136,13 +144,12 @@ namespace Server
         {
             if (!File.Exists("encryptedPassword.bin"))
             {
-                msgLogger("keine Datei (encryptedPassword.bin) vorhanden");
+                msgLogger("Server: keine Datei (encryptedPassword.bin) vorhanden");
                 return false;
             }
             using (FileStream fileStream = new FileStream("encryptedPassword.bin", FileMode.Open, FileAccess.Read))
             {
-                msgLogger("Öffne Filestream zum Lesen eines Passwortfiles");
-                IFormatter binFormatter = new BinaryFormatter();
+                msgLogger("Server: Öffne Filestream zum Lesen eines Passwortfiles");
                 MemoryStream memOutStream = new MemoryStream();
                 try
                 { DecryptFile(fileStream, memOutStream, secPassString); }
@@ -150,35 +157,52 @@ namespace Server
                 {
                     fileStream?.Close();
                     memOutStream?.Close();
-                    msgLogger("verschlüsselte Datei konnte nicht gelesen werden");
-                    return false; 
+                    msgLogger("Server: verschlüsselte Datei konnte nicht gelesen werden");
+                    return false;
                 }
-                msgLogger("Passwortfile entschlüsselt und in RAM geladen");
+                msgLogger("Server: Passwortfile entschlüsselt und in RAM geladen");
 
                 memOutStream.Seek(0, SeekOrigin.Begin);
+                passwordCode = Encoding.ASCII.GetString(memOutStream.ToArray());
+                msgLogger("Server: Passwortcode eingelesen und Stream in String konvertiert");
+                if (!parsePassCode()) return false;
 
-                varPassword = (VarPassword)binFormatter.Deserialize(memOutStream);
-                msgLogger("Passwortdaten deserialisiert und Passwortobjekt erzeugt");
+                msgLogger("Server: Passwortdaten deserialisiert und Passwortobjekt erzeugt");
 
                 fileStream.Close();
                 memOutStream.Close();
 
             }
 
-            msgLogger("verschlüsselte Datei eingelesen und entschlüsselt");
+            msgLogger("Server: verschlüsselte Datei eingelesen und entschlüsselt");
             return true;
         }
 
         public bool checkPassword(string text)
         {
-            VarDataChecker vDC = new VarDataChecker(this);
-            msgLogger("Aufruf Passwortchecker");
+            VarDataChecker vDC = new VarDataChecker(vDataHandler.varData, varPassword, msgLogger);
+            msgLogger("Server: Aufruf Passwortchecker");
             return vDC.checkPassword(text);
 
         }
         #endregion
 
         #region Private Methods
+
+        private bool parsePassCode()
+        {
+            msgLogger("Server: Lösche evtl. vorhandenen Passwort Code");
+            varPassword.clearElements();
+            msgLogger("Server: Parse Passwort Code");
+            if (passwordCode == null || passwordCode == "") return false;
+            string[] tmpCode = passwordCode.Split(Environment.NewLine.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            foreach (string codeItem in tmpCode)
+            {
+                string[] tmpCodeElement = codeItem.Split(')')[0].Split('(');
+                varPassword.addElement(tmpCodeElement);
+            }
+            return true;
+        }
 
         private void readConfigData()
         {
@@ -191,27 +215,26 @@ namespace Server
             {
                 if (!section.SectionInformation.IsProtected && !section.ElementInformation.IsLocked)
                 {
+                    msgLogger("Server: Protected section in konfigurationsdatei noch nicht verschlüsselt");
                     section.SectionInformation.ProtectSection("DataProtectionConfigurationProvider");
                     section.SectionInformation.ForceSave = true;
                     config.Save(ConfigurationSaveMode.Full);
+                    msgLogger("Server: Protected section verschlüsselt und gespeichert");
                 }
                 var settingsXml = new XmlDocument();
                 settingsXml.LoadXml(section.SectionInformation.GetRawXml());
+                msgLogger("Server: Konfigurationsdatei entschlüsseln und SecureString zuweisen");
                 foreach (char pChar in settingsXml.SelectSingleNode("//setting[@name='Password']/value").InnerText)
                 {
-                    secPassString.AppendChar(pChar);
+                    if (secPassString.Length < AESPASSLENGTH)
+                        secPassString.AppendChar(pChar);
+                }
+                int charPos = 0;
+                while (secPassString.Length<AESPASSLENGTH && charPos<AESFILLSTRING.Length)
+                {
+                    secPassString.AppendChar(AESFILLSTRING[charPos++]);
                 }
             }
-        }
-
-        private void createVarData(IDataCreator iDC)
-        {
-            pDH = new VarDataHandler();
-            msgLogger("Start Generierung variable Daten: " + iDC.GetType().ToString());
-            pDH.setDataType(iDC);
-            msgLogger("variable Daten generiert: " + iDC.GetType().ToString());
-            serverData.Add(iDC.GetType(), pDH);
-            varDataAvailable = true;
         }
 
         private void encryptStream(MemoryStream fsInput, string sOutputFilename, SecureString sKey)
@@ -232,7 +255,7 @@ namespace Server
                 fsInput.Close();
                 fsEncrypted.Close();
             }
-            msgLogger("Aes Verschlüsselung des serialisierten Objekts");
+            msgLogger("Server: Aes Verschlüsselung des serialisierten Objekts");
         }
 
         private void DecryptFile(FileStream fsread, MemoryStream fsDecrypted, SecureString sKey)
@@ -262,11 +285,18 @@ namespace Server
             {
                 cryptostreamDecr?.Close();
             }
-            msgLogger("Aes Entschlüsselung des verschlüsselten Files");
+            msgLogger("Server: Aes Entschlüsselung des verschlüsselten Files");
         }
 
+        #endregion
 
-
+        #region EventHandler
+        private void addElementHandler(object sender, PassEventArgs e)
+        {
+            msgLogger("Server: Request update Elemente");
+            passwordCode = e.codeText;
+            passwordResult = e.resultText;
+        }
         #endregion
     }
 

@@ -3,23 +3,24 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Passwords;
-using VariableData;
+using PassElements;
 
 namespace Server
 {
     class VarDataChecker
     {
-        LoginServer passLoginServer;
-
-        public VarDataChecker(LoginServer loginServer)
+        Dictionary<string, PassElement> varData;
+        VarPassword varPassword;
+        MSGLogger msgLogger;
+        public VarDataChecker(Dictionary<string,PassElement> varServerData, VarPassword varServerPassword, MSGLogger logger)
         {
-            passLoginServer = loginServer;
+            msgLogger = logger;
+            varData = varServerData;
+            varPassword = varServerPassword;
         }
 
         public bool checkPassword(string userVarPassword)
         {
-            ////Problem wird auftauchen wenn der Fixanteil am Schluss kommt
 
             if (userVarPassword.Length == 0) return false;
             int fixElementLength = 0;
@@ -27,25 +28,29 @@ namespace Server
             int peekPosition = 0;
             string valPassword="";
 
-            PassElement[] pElements = new PassElement[passLoginServer.varPassword.elementsCount];
-            for (int i = 0; i < passLoginServer.varPassword.elementsCount; i++)
-                pElements[i] = getPassElement(passLoginServer.varPassword.getElement(i));
+            msgLogger("PasswordChecker: temporäre Passwortelemente gemäß varPassword anlegen");
+            PassElement[] pElements = new PassElement[varPassword.elementsCount];
+            for (int i = 0; i < varPassword.elementsCount; i++)
+                pElements[i] = getPassElement(varPassword.getElement(i));
 
             for (int i = 0; i < pElements.Length; i++)
             {
                 if (peekPosition >= userVarPassword.Length) break;
                 
-                if(pElements[i].GetType()!=typeof(FixPassElement) )
-                {  
-                    if (pElements[i].getPassData().Length > userVarPassword.Substring(peekPosition).Length) break;      
-                    pElements[i].CheckValue = userVarPassword.Substring(peekPosition, pElements[i].getPassData().Length);
-                    peekPosition = peekPosition + pElements[i].getPassData().Length;
-                }
-                else if (pElements[i].GetType() == typeof(FixPassElement) && i== passLoginServer.varPassword.elementsCount-1)
+                if(pElements[i].GetType() != typeof(FixPassElement))
                 {
-                    pElements[i].CheckValue = userVarPassword.Substring(peekPosition);
+                    
+                    if (((DynPassElement)pElements[i]).PassData.Length > userVarPassword.Substring(peekPosition).Length) break;
+                    msgLogger("PasswordChecker: dynamisches Element merken: " + userVarPassword.Substring(peekPosition, ((DynPassElement)pElements[i]).PassData.Length));
+                    pElements[i].CheckValue = userVarPassword.Substring(peekPosition, ((DynPassElement)pElements[i]).PassData.Length);
+                    peekPosition = peekPosition + ((DynPassElement)pElements[i]).PassData.Length;
                 }
-                else if(pElements[i].GetType() == typeof(FixPassElement) && i< passLoginServer.varPassword.elementsCount-1)
+                else if (pElements[i].GetType() == typeof(FixPassElement) && i== varPassword.elementsCount-1)
+                {
+                    msgLogger("PasswordChecker: fixes Element an letzer Position merken: " + userVarPassword.Substring(peekPosition));
+                   pElements[i].CheckValue = userVarPassword.Substring(peekPosition);
+                }
+                else if(pElements[i].GetType() == typeof(FixPassElement) && i< varPassword.elementsCount-1)
                 {
                     fixElementLength = 0;
                     fixElementStart = peekPosition;
@@ -56,6 +61,7 @@ namespace Server
                         fixElementLength++;
                     } while (!pElements[i].checkElement() && peekPosition<userVarPassword.Length);
                     if (peekPosition >= userVarPassword.Length && !pElements[i].checkElement()) break;
+                    msgLogger("PasswordChecker: fixes Element merken: " + userVarPassword.Substring(fixElementStart, fixElementLength-1));
                 }
                 else
                 {
@@ -63,12 +69,14 @@ namespace Server
                 }
             }
 
+            msgLogger("PasswordChecker: vergleiche einzelne Elemente mit erzeugten Klartextelementen");
             foreach (PassElement item in pElements)
             {
                 if (!item.checkElement()) return false;
                 valPassword += item.CheckValue;
             }
 
+            msgLogger("PasswordChecker: vergleiche Usereingabe mit generiertem Passwort: " + (String.Compare(userVarPassword, valPassword) == 0 ? "Übereinstimmung" : "Falsch"));
             return String.Compare(userVarPassword, valPassword) == 0 ? true : false;
         }
 
@@ -76,7 +84,7 @@ namespace Server
         {
             if (passElement.PassCommand == "Fix")
             {
-                if (passElement.getPassData() == FixPassElement.cryptSHA1(userVarPassword))
+                if (passElement.PassParameter == FixPassElement.cryptSHA1(userVarPassword))
                 {
                     startPos = startPos + passElement.PassParameter.Length;
                     return true;
@@ -85,11 +93,11 @@ namespace Server
             }
             else
             {
-                if (passElement.getPassData().Length <= userVarPassword.Substring(startPos).Length)
+                if (((DynPassElement)passElement).PassData.Length <= userVarPassword.Substring(startPos).Length)
                 {
-                    if (passElement.getPassData() == userVarPassword.Substring(startPos, passElement.getPassData().Length))
+                    if (((DynPassElement)passElement).PassData == userVarPassword.Substring(startPos, ((DynPassElement)passElement).PassData.Length))
                     {
-                        startPos = startPos + passElement.getPassData().Length;
+                        startPos = startPos + ((DynPassElement)passElement).PassData.Length;
                         return true;
                     }
                 }
@@ -103,25 +111,16 @@ namespace Server
             switch (v[0])
             {
                 case "Fix":
-                    pE = new FixPassElement(new Dictionary<string, string>());
+                    pE = new FixPassElement(v[1],false);
                     break;
-                case "Rnd":
-                    pE = new RandomIPassElement(passLoginServer.getServerData(typeof(VarRandomI)));
-                    break;
-                case "Timedate":
-                    pE = new TimedatePassElement(passLoginServer.getServerData(typeof(VarTime)));
-                    break;
-                case "Color":
-                    pE = new ColorPassElement(passLoginServer.getServerData(typeof(VarColor)));
-                    break;
-                case "RndA":
-                    pE = new RandomAPassElement(passLoginServer.getServerData(typeof(VarRandomA)));
+                case "Dyn":
+                    pE = varData[v[1]];
                     break;
                 default:
                     throw new Exception("Kein gültiges Passwortelement");
             }
-            pE.PassParameter = v[1];
             return pE;
         }
+
     }
 }

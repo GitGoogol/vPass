@@ -4,29 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Security.Cryptography;
 
-namespace Passwords
+namespace PassElements
 {
     public class FixPassElement : PassElement
     {
         private string fixPartRaw;
-
-        private Dictionary<string,string> sData;
-
-        public FixPassElement(Dictionary<string, string> serverData) : base(serverData)
-        {
-            sData = serverData;
-        }
-        
-        public string FixPartRaw
-        {
-            get { return fixPartRaw; }
-            set
-            {
-                fixPartRaw = value == null ? "" : value;
-                PassParameter = cryptSHA1(fixPartRaw);
-            }
-        }
-        
+        private string pParameter;
+                       
         override public string PassCommand
         {
             get
@@ -35,35 +19,41 @@ namespace Passwords
             }
 
         }
-        
-        override public string PassType
+
+        public override string PassParameter
         {
             get
             {
-                return "Fixanteil";
+                return pParameter;
             }
         }
 
-        override public string[] getAvailableParms()
+        public FixPassElement(string passParameter):this(passParameter, true)
         {
-            return new string[] { "" };
-
+            
         }
 
-
-        override public string getPassData()
+        public FixPassElement(string passParameter, bool doEncryption):base(passParameter)
         {
-
-            if (PassParameter != null && PassParameter != "")
-                return FixPartRaw;
+            if (doEncryption)
+            {
+                fixPartRaw = passParameter == null ? "" : passParameter;
+                pParameter = cryptSHA1(fixPartRaw);
+            }
             else
-                return "";
+            {
+                fixPartRaw = null;
+                pParameter = passParameter;
+            }
 
         }
 
         public override bool checkElement()
         {
-            return String.Compare(cryptSHA1(CheckValue), PassParameter) == 0 ? true : false;
+            if (CheckValue != null && CheckValue != "")
+                return String.Compare(cryptSHA1(CheckValue), pParameter) == 0 ? true : false;
+            else
+                return pParameter == "" ? true : false;
         }
 
         public static string cryptSHA1(string dataToCrypt)

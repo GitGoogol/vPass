@@ -13,6 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
+    <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -25,7 +26,6 @@
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
@@ -102,18 +102,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Passwords\VarElements.csproj">
+    <ProjectReference Include="..\Passwords\PassElements.csproj">
       <Project>{51C864DF-89AD-4127-AEF9-DFE27A6D6B1A}</Project>
-      <Name>VarElements</Name>
+      <Name>PassElements</Name>
     </ProjectReference>
     <ProjectReference Include="..\Server\Server.csproj">
       <Project>{785f3ebe-6f05-40b0-ae87-ca2abed40f68}</Project>
       <Name>Server</Name>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\VariableDataGenerator\VariableData.csproj">
-      <Project>{80185C3F-C05F-4D98-813C-BC2ED31D74D6}</Project>
-      <Name>VariableData</Name>
       <Private>True</Private>
     </ProjectReference>
   </ItemGroup>

@@ -44,19 +44,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LoginServer.cs" />
-    <Compile Include="PassDataHandler.cs" />
+    <Compile Include="UIHandler.cs" />
+    <Compile Include="VarDataHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VarDataChecker.cs" />
     <Compile Include="VarPassword.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Passwords\VarElements.csproj">
+    <ProjectReference Include="..\Passwords\PassElements.csproj">
       <Project>{51c864df-89ad-4127-aef9-dfe27a6d6b1a}</Project>
-      <Name>VarElements</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\VariableDataGenerator\VariableData.csproj">
-      <Project>{80185c3f-c05f-4d98-813c-bc2ed31d74d6}</Project>
-      <Name>VariableData</Name>
+      <Name>PassElements</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
