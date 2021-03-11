@@ -26,8 +26,10 @@ namespace Server
         Stopwatch sW;
         MSGLogger msgLogger;
         TrackBar imgSizer;
+        GroupBox grpQueryDataContainer;
         PrivateFontCollection privateFontCollection;
         FontFamily captchaFont;
+
         #endregion
 
         #region Public Members
@@ -43,6 +45,7 @@ namespace Server
             sW = new Stopwatch();
             sW.Start();
             uiForm = PassUIForm;
+            grpQueryDataContainer = (GroupBox)(PassUIForm.Controls.Find("grpQueryData", true))[0];
             varPassPanel = (FlowLayoutPanel)(PassUIForm.Controls.Find("varPasswordPanel", true))[0];
             varDataPanel = (FlowLayoutPanel)(PassUIForm.Controls.Find("flowGeneratePanel", true))[0];
             imgSizer= (TrackBar)(PassUIForm.Controls.Find("trkImgSize", true))[0];
@@ -60,7 +63,7 @@ namespace Server
         #region Public Methods
         public void setCustomCaptchaFont()
         {
-            privateFontCollection.AddFontFile(@".\Resources\Pacifico.ttf");
+            privateFontCollection.AddFontFile(@".\Resources\LetterFont.ttf");
             captchaFont = privateFontCollection.Families[0];
         }
 
@@ -88,6 +91,8 @@ namespace Server
                 tmp1PictBox.Tag = pElement.Value;
                 tmp1PictBox.Name = pElement.Value.PassParameter;
                 tmp1PictBox.DoubleClick += TmpPictBox_DoubleClick;
+                tmp1PictBox.MouseHover += TmpPictBox_MouseHover;
+                tmp1PictBox.MouseLeave += TmpPictBox_MouseLeave;
                 Binding sizeBinding = new Binding("Size", imgSizer, "Value");
                 sizeBinding.Format += SizeConvertEventHandler;
                 tmp1PictBox.DataBindings.Add(sizeBinding);
@@ -96,7 +101,7 @@ namespace Server
             msgLogger("UiHandler: FlowPanel mit variablen Inhalten gefüllt");
 
         }
-        
+
         public void initDisplay()
         {
             varPassPanel.Controls.Clear();
@@ -163,6 +168,8 @@ namespace Server
         private void gatherPassInfo()
         {
             PassElement tmpE = null;
+            PseudoPassElement ppe;
+            bool pseudoAdded = false;
             StringBuilder resultBuilder = new StringBuilder();
             StringBuilder codeBuilder = new StringBuilder();
             foreach (object tmpPassElement in varPassPanel.Controls)
@@ -184,7 +191,19 @@ namespace Server
                     resultBuilder.Append(((DynPassElement)tmpE).PassData);
                     codeBuilder.Append(tmpE.PassCommand + "(" + tmpE.PassParameter + ")" + Environment.NewLine);
                 }
+                
+                if(rnd.Next(0,2)==1)
+                {
+                    ppe = new PseudoPassElement();
+                    codeBuilder.Append(ppe.PassCommand + "(" + ppe.PassParameter + ")" + Environment.NewLine);
+                    pseudoAdded = true;
+                }
 
+            }
+            if(!pseudoAdded)
+            {
+                ppe = new PseudoPassElement();
+                codeBuilder.Append(ppe.PassCommand + "(" + ppe.PassParameter + ")" + Environment.NewLine);
             }
 
             PassEventArgs pEventArgs = new PassEventArgs(resultBuilder.ToString(), codeBuilder.ToString());
@@ -195,6 +214,36 @@ namespace Server
         #endregion
 
         #region EventHandler
+
+        private void TmpPictBox_MouseLeave(object sender, EventArgs e)
+        {
+            if (varDataPanel.Parent != (uiForm.Controls.Find("grpGenerateData", true))[0])
+            {
+
+            }
+        }
+
+        private void TmpPictBox_MouseHover(object sender, EventArgs e)
+        {
+            if (varDataPanel.Parent != (uiForm.Controls.Find("grpGenerateData", true))[0])
+            {
+                varDataPanel.Visible = false;
+                string code = ((DynPassElement)((PictureBox)sender).Tag).PassData;
+                Graphics g = grpQueryDataContainer.CreateGraphics();
+                Color[] colRnd = new Color[] { Color.Lime, Color.Blue };
+                int rndIx = rnd.Next(0, 2);
+                SolidBrush textCol = new SolidBrush(colRnd[rndIx]);
+                int counter = 0;
+                for (int i = 0; i < code.Length; i++)
+                {
+                    g.DrawString(code[i].ToString(), new Font(captchaFont, 70 + rnd.Next(5, 8)), textCol, new PointF(counter, rnd.Next(1, 70)));
+                    counter += 30;
+                }
+                
+                g.Dispose();
+            }
+        }
+
         private void TmpPictBox_DoubleClick(object sender, EventArgs e)
         {
             msgLogger("UiHandler: Doppelklick auf " + ((PictureBox)sender).Name);

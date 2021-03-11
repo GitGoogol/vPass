@@ -38,13 +38,12 @@
 - verschachtelte variable Elemente wären noch eine fortgeschrittene Variante (z.B. RndA(RndI("Wow"))). Nicht möglich wäre RndI(Fix("Wow")) oder Fix(RndI("Wow")) also wohl generell in Verbindung mit Fixelementen. Verhindern müsste man auch z.B. RndA(Timedate(Day))
 
 - bei Erzeugen der Passwortdatei könnten noch zufällige Leerelemente erzeugt werden. Das würde verhindern, dass die verschlüsselte Datei bei gleichen Inhalt gleich aussieht (auch ziemlich cool)
-
+	->erledigt aber noch kein "DeepTest" gemacht
 
 v1.0
 - in der vPass.exe.config kann ein Passwort eingetragen werden, dass dafür zuständig ist, den später erzeugten Passwortcode zu verschlüsseln. Interessant hierbei ist, dass das eingetragene Passwort nach dem ersten Start der Anwendung nicht mehr zu lesen ist in der Datei. Ausserdem sollte die Entschlüsselung nur noch auf dem Rechner funktionieren, auf dem das Passwort das erste Mal verschlüsselt wurde (habe ich noch nicht ausprobiert, weiß auch nicht ob es betriebssystemabhängig oder rechnerhardwareabhängig verschlüsselt wird)
  http://www.cool-it.at/blog/September-2012/Passworter-in-App-Config-verschlusselt-ablegen
  Im templates-Ordner liegt eine frische Datei, mit der man die verschlüsselte ersetzen und ein neues Passwort anlegen kann.
- 
  
  - das erzeugte Passwort wird nicht mehr als serialisiertes Objekt abgelegt. Nur noch als normale Zeichenfolge, die verschlüsselt wird (->spart Speicherplatz)
  

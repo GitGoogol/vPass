@@ -25,7 +25,7 @@ namespace Server
         private VarPassword vPassword;
         private string appMode;
         SecureString secPassString = new SecureString();
-
+        static Random rnd;
         #endregion
 
         #region Public Members
@@ -52,7 +52,7 @@ namespace Server
         #region Constructor
         public LoginServer(Form PassUIForm)
         {
-
+            rnd = new Random();
             varDataAvailable = false;
             uiHandler = new UIHandler(PassUIForm);
             msgLogger = uiHandler.writeLog;
@@ -195,7 +195,7 @@ namespace Server
         #region Private Methods
 
         private bool parsePassCode()
-        {
+        {            
             msgLogger("Server: Lösche evtl. vorhandenen Passwort Code");
             varPassword.clearElements();
             msgLogger("Server: Parse Passwort Code");

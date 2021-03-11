@@ -73,9 +73,9 @@ namespace vPass.Properties {
         /// <summary>
         ///   Sucht eine lokalisierte Ressource vom Typ System.Byte[].
         /// </summary>
-        internal static byte[] Pacifico {
+        internal static byte[] LetterFont {
             get {
-                object obj = ResourceManager.GetObject("Pacifico", resourceCulture);
+                object obj = ResourceManager.GetObject("LetterFont", resourceCulture);
                 return ((byte[])(obj));
             }
         }

@@ -37,7 +37,7 @@ namespace Server
             {
                 if (peekPosition >= userVarPassword.Length) break;
                 
-                if(pElements[i].GetType() != typeof(FixPassElement))
+                if(pElements[i].GetType() == typeof(DynPassElement))
                 {
                     
                     if (((DynPassElement)pElements[i]).PassData.Length > userVarPassword.Substring(peekPosition).Length) break;
@@ -62,6 +62,10 @@ namespace Server
                     } while (!pElements[i].checkElement() && peekPosition<userVarPassword.Length);
                     if (peekPosition >= userVarPassword.Length && !pElements[i].checkElement()) break;
                     msgLogger("PasswordChecker: fixes Element merken: " + userVarPassword.Substring(fixElementStart, fixElementLength-1));
+                }
+                else if (pElements[i].GetType() == typeof(PseudoPassElement))
+                {
+                    //nothing to do here
                 }
                 else
                 {
@@ -115,6 +119,9 @@ namespace Server
                     break;
                 case "Dyn":
                     pE = varData[v[1]];
+                    break;
+                case "Pseudo":
+                    pE = new PseudoPassElement();
                     break;
                 default:
                     throw new Exception("Kein gültiges Passwortelement");
