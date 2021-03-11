@@ -116,6 +116,9 @@
     <None Include="Resources\juhu.jpg" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\Pacifico.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Resources\puhh.jpg" />
   </ItemGroup>
   <ItemGroup>

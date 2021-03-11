@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Text;
 using System.Windows.Forms;
 
@@ -26,8 +27,10 @@ namespace vPass
             InitializeComponent();
             varPassFileAvailable = false;
             passLoginServer = new LoginServer(this);
+            passLoginServer.setCustomCaptchaFont();
             passLoginServer.reloadVarDataDisplay();
             tabMain.TabPages[0].Select();
+                        
         }
 
         #endregion

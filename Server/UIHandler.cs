@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Drawing.Text;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -24,6 +26,8 @@ namespace Server
         Stopwatch sW;
         MSGLogger msgLogger;
         TrackBar imgSizer;
+        PrivateFontCollection privateFontCollection;
+        FontFamily captchaFont;
         #endregion
 
         #region Public Members
@@ -46,12 +50,20 @@ namespace Server
             codeBox = (TextBox)(PassUIForm.Controls.Find("codeBox", true))[0];
             delButton = (Button)(PassUIForm.Controls.Find("btnDelete", true))[0];
             delButton.Click += delButton_Click;
+            privateFontCollection = new PrivateFontCollection();
+            captchaFont = new FontFamily("Consolas");
             
         }
 
         #endregion
 
         #region Public Methods
+        public void setCustomCaptchaFont()
+        {
+            privateFontCollection.AddFontFile(@".\Resources\Pacifico.ttf");
+            captchaFont = privateFontCollection.Families[0];
+        }
+
         public void writeLog(string strMessage)
         {
             TextBox tmpBox;
@@ -108,7 +120,7 @@ namespace Server
             int counter = 0;
             for (int i = 0; i < code.Length; i++)
             {
-                g.DrawString(code[i].ToString(), new Font("Consolas", 40 + rnd.Next(5, 8)), textCol, new PointF(counter, rnd.Next(1, 30)));
+                g.DrawString(code[i].ToString(), new Font(captchaFont, 40 + rnd.Next(5, 8)), textCol, new PointF(counter, rnd.Next(1, 30)));
                 counter += 30;
             }
             g.Dispose();

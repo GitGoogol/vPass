@@ -39,6 +39,7 @@
 
 - bei Erzeugen der Passwortdatei könnten noch zufällige Leerelemente erzeugt werden. Das würde verhindern, dass die verschlüsselte Datei bei gleichen Inhalt gleich aussieht (auch ziemlich cool)
 
+
 v1.0
 - in der vPass.exe.config kann ein Passwort eingetragen werden, dass dafür zuständig ist, den später erzeugten Passwortcode zu verschlüsseln. Interessant hierbei ist, dass das eingetragene Passwort nach dem ersten Start der Anwendung nicht mehr zu lesen ist in der Datei. Ausserdem sollte die Entschlüsselung nur noch auf dem Rechner funktionieren, auf dem das Passwort das erste Mal verschlüsselt wurde (habe ich noch nicht ausprobiert, weiß auch nicht ob es betriebssystemabhängig oder rechnerhardwareabhängig verschlüsselt wird)
  http://www.cool-it.at/blog/September-2012/Passworter-in-App-Config-verschlusselt-ablegen
@@ -52,4 +53,8 @@ v1.0
  - im Ordner imgs liegen die verschiedenen Passwortbildelemente. Diese können beliebig erweitert werden (ich habe noch ein paar zusätzliche im templates-Ordner abgelegt). Einfach einen Ordner anlegen, der dem Passwortelement entsprechen soll und Bilder rein (jpg mit 130x130 sonst sieht es nicht schön aus bzw. die Zufallsdaten sind nicht zu lesen)
  
  - leider habe ich noch keine absolut tolle Schrift gefunden, mit der man Groß- und Kleinbuchstaben 100%ig auseinanderhalten kann aber die verwendete "Consolas" ist bis jetzt am Besten
+	-> eigene Schrift mit Schrift erstellt bzw. noch erstellen
+	-> Schrift irgendwie skalierbar bzw. zoombar in der App machen
+
+
  

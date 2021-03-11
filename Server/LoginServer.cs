@@ -73,6 +73,11 @@ namespace Server
         #endregion
 
         #region Public Methods
+        public void setCustomCaptchaFont()
+        {
+            uiHandler.setCustomCaptchaFont();
+        }
+
         public void initServer()
         {
             msgLogger("Server: Init Server");
