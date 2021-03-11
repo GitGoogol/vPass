@@ -1,0 +1,40 @@
+- die Zufallszahlen sollten aus drei Gruppen bestehen. Bereich 0-9, 100-109 und 1000-1009. Somit wäre es evtl schwieriger eine eindeutige Zuordnung festzustellen
+	oder evtl. nur 0-9 oder aus nur EINER Gruppe die sich ändert (z.B. 123, 132, 231, 321, 111, 222 -> 3 hoch 3 Möglichkeiten ergibt 27 und wäre somit doch ideal für das Alphabet könnte aber auch wieder leicht auf den verwendeten Buchstaben zurückführen)
+	wahrscheinlich ist der Zahlenbereich von 0-9 schon die beste Wahl, es gäbe Wiederholungen aber auch nicht zu viele 
+
+- Farben sind evtl. nicht so ideal (Problem der Sprache und der konstanden Zeichenfolge). Evtl. wäre Captchas mit Zahlen gut
+
+- Monatsname und Name des Tages sind evtl nicht so gut, da konstante Zeichenfolgen und wegen Sprachenproblem. Evtl ist hier ein doppelter Verweis sinnvoll (Buchstaben des Tages/Monats werden durch Zahlen im Randombereich ersetzt) wobei das Problem der Sprache bleibt. Gut wäre jedoch die variable Länge des Passworts, könnte jedoch auch bestimmt noch mit anderen Komponenten erreicht werden
+
+- im Randombereich könnte die Ersetzung für Kleinbuchstaben eine rückwertsgerichtete Schreibweise der angezeigten Zahlen sein (<- bei einstelligen Zahlen eher doof). --> das Komplement bei einstellien Zahlen (9-x), also bei 4 z.B. 9-4=5
+	--> rückwärtsgerichtete Schreibweise umgesetzt, jedoch wäre diese wahrscheinlich günstiger für Großbuchstaben, da diese nicht so oft vorkommen
+
+- beim Entschlüsseln muss erst der erste variable Teil gefunden werden. Hier könnte evtl. das größte Problem auftreten wenn es einen Fixanteil gibt, der dem variablen gleicht, z.B
+	Fix: 123
+	Var: 123
+	die Routine würde zuerst den Fixteil als variabel ansehen. Das könnte man verhindern, da die Routine ja weiß, dass es noch einen Fixteil vorher geben muss. Anders würde es bei folgendem Fall aussehen:
+	Fix: 123123
+	Var: 123
+	hier würde der Algo das zweite "123" im Fixanteil als variabel ansehen und auch auswerten, da vorher auch noch andere Zeichen vorhanden sind. D.h. sobald dann beim Auswerten des Fixanteils ein Fehler auftritt muss die Routine das vermeintliche Ergebnis verwerfen und sich den nächsten passenden variablen Teil suchen
+	--> sollte richtig umgesetzt sein, muss aber noch getestet werden
+
+- zwei Fixteile hintereinander sind nicht möglich, da die Aufteilung bei der Auswertung nicht möglich ist
+	--> kein Problem, wird verhindert. Zwei Fixteile hintereinander machen auch keinen Sinn
+
+- zum Abspeichern sollte ein extra Objekt erzeugt werden, dieses serialisieren und mit der CryptoStream-Klasse abgespeichert werden
+	--> umgesetzt, nimmt aber mehr Speicher in Anspruch. Bei Speicherproblemen könnte das ganze auch einfach ein einfacher String sein, der verschlüsselt abgespeichert wird, müsste danach einfach geparst werden
+
+- eine Lösung für die individulle Verschlüsselung der variablen Passwortdatei auf dem Server wäre noch schön. Momentan nur zwei(drei) Ideen:
+	1. ein zusätzliches Element, dass die Datei verschlüsselt (...noch mehr Zeichen zu merken<-weniger schön)
+	2. zwei oder ein Zeichen festlegen zwischen denen im Fixanteil der Schlüssel oder ein Teil davon (wenn Schlüssel mit Serverschlüssel gemixt wird) steht (<-bekannte Fixanteile sind eigentlich immer nicht sooo gut)
+	3. eine Ideallösung wäre in Hardware gegossen. Ein Chip, der ein Passwort (das nicht von aussen zugänglich ist) abspeichert und den Algo zum Ver-/Entschlüsseln des variablen Passworts integriert hat. Coole Lösung wäre hier ein USB Dongle. Das variable Passwort könnte auch mit einem öffentlichen Schlüssel, den man vom Dongle bekommt verschlüsselt werden. Zum Entschlüsseln übergibt man dem Dongle dann das eingegebene Passwort, die variablen Daten (vom Server generiert) und die verschlüsselte Passwortdatei. Heraus kommt dann nur ok oder nok. 
+
+- für das Verschlüsseln am Server wäre wohl eine asymmetrische Verschlüsselung statt AES schöner. So könnte das Verschlüsseln schon am Client stattfinden und verschlüsselt übertragen werden (wird das mit https nicht sowieso gemacht?)
+
+- alle Elemente (variable Daten) sollten eigentlich in Grafikelemente eingebettet sein, somit würde noch eine zusätzliche Hürde geschaffen. Einfache Controls wie aktuell könnten "einfacher" maschinell ausgelesen werden 
+
+- trotz allem wären evtl. noch einfacher zu findende, nicht maschinenlesbare Elemente gut. Bilder die einem eindeutigen Wort zuordenbar sind aber von einem Computer nicht erkannt werden können. Hier wären Adjektive sicherer als Substantive. Es könnte z.B. ein Bild abgebildet und verschiedene Worte angeboten werden, von denen das richtige gewählt werden muss (Bild: lachendes Kind; angebotene Wortauswahl: lustig, traurig, böse, fliegend, schwimmend --- im nächsten Fall z.B. gleiches Bild mit den Worten: jung, alt, windig, windstill, drohend). Bei angebotenen Worten wäre darauf zu achten, dass sich nicht ein Wort zu sehr hervorhebt (gar nicht mal so einfach, wenn trotzdem nur ein Wort zur Situation passen soll) , da sonst automatisch leicher ausfindig zu machen
+
+- verschachtelte variable Elemente wären noch eine fortgeschrittene Variante (z.B. RndA(RndI("Wow"))). Nicht möglich wäre RndI(Fix("Wow")) oder Fix(RndI("Wow")) also wohl generell in Verbindung mit Fixelementen. Verhindern müsste man auch z.B. RndA(Timedate(Day))
+
+- bei Erzeugen der Passwortdatei könnten noch zufällige Leerelemente erzeugt werden. Das würde verhindern, dass die verschlüsselte Datei bei gleichen Inhalt gleich aussieht (auch ziemlich cool)
